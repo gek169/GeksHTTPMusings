@@ -8,11 +8,42 @@
 #define STRUTIL_ALLOC(s) malloc(s)
 #endif
 
+#ifndef STRUTIL_NO_SHORT_NAMES
+#define strcata strcatalloc
+#define strcataf1 strcatallocf1
+#define strcataf2 strcatallocf2
+#define strcatafb strcatallocfb
+#endif
 //Strcat but with malloc.
 static inline char* strcatalloc(const char* s1, const char* s2){
 	char* d = STRUTIL_ALLOC(strlen(s1) + strlen(s2) + 1);
 	strcpy(d, s1);
 	strcat(d, s2);
+	return d;
+}
+
+static inline char* strcatallocf1(char* s1, const char* s2){
+	char* d = STRUTIL_ALLOC(strlen(s1) + strlen(s2) + 1);
+	strcpy(d, s1);
+	strcat(d, s2);
+	free(s1);
+	return d;
+}
+
+static inline char* strcatallocf2(const char* s1, char* s2){
+	char* d = STRUTIL_ALLOC(strlen(s1) + strlen(s2) + 1);
+	strcpy(d, s1);
+	strcat(d, s2);
+	free(s2);
+	return d;
+}
+
+static inline char* strcatallocfb(char* s1, char* s2){
+	char* d = STRUTIL_ALLOC(strlen(s1) + strlen(s2) + 1);
+	strcpy(d, s1);
+	strcat(d, s2);
+	free(s1);
+	free(s2);
 	return d;
 }
 

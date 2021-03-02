@@ -1022,7 +1022,7 @@ void hs_bind_localhost(int s, struct sockaddr_in* addr, const char* ipaddr, int 
   addr->sin_port = htons(port);
   int rc = bind(s, (struct sockaddr *)addr, sizeof(struct sockaddr_in));
   if (rc < 0) {
-    exit(1);
+    exit(1); //THE ONLY ONE IN THE ENTIRE PROGRAM!
   }
 }
 
@@ -1215,6 +1215,7 @@ void http_server_set_userdata(struct http_server_s* serv, void* data) {
   serv->data = data;
 }
 
+//MARK 1
 void http_listen(http_server_t* serv, const char* ipaddr) {
   // Ignore SIGPIPE. We handle these errors at the call site.
   signal(SIGPIPE, SIG_IGN);
@@ -1592,6 +1593,8 @@ void hs_add_server_sock_events(http_server_t* serv) {
   kevent(serv->loop, &ev_set, 1, NULL, 0, NULL);
 }
 
+
+//MARK 2
 int http_server_listen_addr(http_server_t* serv, const char* ipaddr) {
   http_listen(serv, ipaddr);
 
@@ -1603,6 +1606,9 @@ int http_server_listen_addr(http_server_t* serv, const char* ipaddr) {
       ev_cb_t* ev_cb = (ev_cb_t*)ev_list[i].udata;
       ev_cb->handler(&ev_list[i]);
     }
+#ifdef SERVER_LISTEN_HOOK
+	SERVER_LISTEN_HOOK();
+#endif
   }
   return 0;
 }
