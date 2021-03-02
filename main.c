@@ -37,6 +37,7 @@ void deliver_404(struct http_request_s* request){
   	http_response_header(response, "Content-Type", "text/plain");
   	http_response_body(response, text_404, strlen(text_404));
   	http_respond(request, response);
+  	puts("User was delivered 404\n");
 }
 
 void deliver_string_contenttype(struct http_request_s* request, const char* str, const char* contenttype){
@@ -93,7 +94,23 @@ void deliver_text(struct http_request_s* request, const char* fname){
 	fclose(f);
 }
 
-
+void deliver_redirect(struct http_request_s* request, const char* location){
+	const char* docp1 = "<!DOCTYPE html>"
+											"<html>"
+					  							"<head>"
+					    					"<meta http-equiv=\"refresh\" content=\"1; url=\'";
+			
+	const char* docp2 =		   "\'\" />"
+			  "</head>"
+			  "<body>"
+			   "<p>Redirecting!</p>"
+			  "</body>"
+			"</html>";
+	char* b = strcatallocf2(docp1, strcatalloc(location, docp2));
+	deliver_string_contenttype(request, b, "text/html");
+	free(b);
+	return;
+}
 
 void deliver_html(struct http_request_s* request, const char* fname){
 	if(!fname)	{deliver_404(request);return;}
@@ -133,8 +150,8 @@ void handle_user_session_req(struct http_request_s* request, const char* sess_ur
 		}
 		SAFEPTR_RESOURCE_UNLOCK();
 		SESSIONS_RESOURCE_UNLOCK();
-		if(!(s_mine < MAX_USER_SESSIONS)){deliver_string(request, "No free sessions!");return;}
-		sessions[s_mine].data1 = SAFEPTR_MALLOC(char, 512, (10000));
+		if(!(s_mine < MAX_USER_SESSIONS)){deliver_string(request, "No free sessions! Refresh a few times and see if one comes up!");return;}
+		sessions[s_mine].data1 = SAFEPTR_MALLOC(char, 512, (30));
 		sessions[s_mine].type = 1; //Text entry session- The user enters text and it is spat back at them.
 		sprintf(string_sessionid,"%u",s_mine);
 		const char* docp1 = "<!DOCTYPE html>"
@@ -148,48 +165,91 @@ void handle_user_session_req(struct http_request_s* request, const char* sess_ur
 				   "<p>Redirecting you to your session....</p>"
 				  "</body>"
 				"</html>";
-		char* b = strcataf1(strcata(docp1, string_sessionid),docp2);
+		char* b = strcatallocf1(	strcatalloc(docp1, string_sessionid),	docp2);
 		if(!b)	{deliver_string(request, "Internal server error :(");return;}
 		deliver_string_contenttype(request, b, "text/html");
 		free(b);
 	} else if(strprefix("active/",sess_url_text)){
+
 		sess_url_text += 7;
 		unsigned int id = 0; id = strtoull(sess_url_text, 0, 10 );
-		if(id > MAX_USER_SESSIONS) {deliver_string(request, "stop trying to break my server");return;}
+		if(id >= MAX_USER_SESSIONS) {deliver_404(request);return;}
 		SESSIONS_RESOURCE_LOCK();
 		SAFEPTR_RESOURCE_LOCK();
 		{
+			const char* docp1 = "<!DOCTYPE html>"
+													"<html>"
+							  						"<head>"
+							  						"</head>"
+							  						"<body>"
+							   "<a href=\"/session/end_session/";
+
+			const char* docp2 = "\">click here to end your session.</a>"
+							  "</body>"
+							"</html> <plaintext>";
+			char string_sessionid[50];
+			string_sessionid[49] = '\0';
 			void* p = NULL;
+
 			p = safepointer_deref(sessions[id].data1);
-			if(p == NULL) {deliver_string(request, "Session expired.");}
-			else
-			{
+			if(p == NULL) 
+				{deliver_string(request, "Session expired.");}
+			else{
 				//Valid request.
 				while(*sess_url_text != '\0' && *sess_url_text != '/')
 					sess_url_text++;
-
-				if(strlen(sess_url_text) > 1){ //Something to add.
-
+				{
 					sess_url_text++;//Skip the slash.
+					sprintf(string_sessionid,"%u",id);
 
-					char* bum = strcatalloc(p, sess_url_text);
-					sessions[id].data1 = SAFEPTR_MALLOC(char, strlen(bum) + 1, (10000));
-					p = safepointer_deref(sessions[id].data1);
-					strcpy(p,bum);
-					deliver_string(request, p);
-					free(bum);
-				} else {deliver_string(request, p);}
+					if(strlen(sess_url_text) > 0){//Something to add.
+						char* bum = strcatalloc(p, sess_url_text);
+						puts("adding text to session...\n");
+						sessions[id].data1 = SAFEPTR_MALLOC(char, strlen(bum) + 1, (30));
+						p = safepointer_deref(sessions[id].data1);
+						strcpy(p,bum);
+						free(bum);
+					} else {
+
+						p = safepointer_deref(sessions[id].data1);
+
+					}
+					//Prepare a webpage.
+					char* web = strcatafb(
+							strcata(docp1, string_sessionid), 
+							strcata(docp2, p)
+						);
+
+					deliver_string_contenttype(request, web, "text/html");
+					free(web);
+				}
 			}
 		}
 		SAFEPTR_RESOURCE_UNLOCK();
 		SESSIONS_RESOURCE_UNLOCK();
 		return;
-	}
+	} else if(strprefix("end_session/",sess_url_text)){
+		sess_url_text += 12;
+		unsigned int id = 0; id = strtoull(sess_url_text, 0, 10 );
+		if(id > MAX_USER_SESSIONS) {deliver_404(request);return;}
+		SESSIONS_RESOURCE_LOCK();
+		SAFEPTR_RESOURCE_LOCK();
+		void* p = NULL;
+		p = safepointer_deref(sessions[id].data1);
+		if(p){
+			safepointer_free(sessions[id].data1);
+			deliver_redirect(request, "/");
+		}
+		else{deliver_string(request, "Cannot end session, it is not active.");}
+		SESSIONS_RESOURCE_UNLOCK();
+		SAFEPTR_RESOURCE_UNLOCK();
+	} else deliver_string(request,"Invalid session request.");
 }
 
 void handle_request(struct http_request_s* request) {
 	struct http_string_s preurl = http_request_target(request);
 	char* alloced_url = str_null_terminated_alloc(preurl.buf, preurl.len);
+	puts("~~ BEGINNING NEW REQUEST ~~\n");
 	if(!alloced_url) {deliver_404(request);return;}
 	if(strprefix("/echo/", alloced_url))			{deliver_string(request, alloced_url+6);goto handled;}
 	else if (strprefix("/text/", alloced_url)){
@@ -244,9 +304,11 @@ void handle_request(struct http_request_s* request) {
 	deliver_html(request, "index.html");
 	//the jump point for all those else-ifs
 	handled:
-	sleep(0.01);
+	puts("Going to collect garbage.\n");
+	sleep(0.1);
 	safepointer_collect_garbage();
 	free(alloced_url);
+	puts("Handled request.\n");
 }
 
 struct http_server_s* server;
