@@ -47,6 +47,10 @@ typedef struct {
 #define SAFEPTRHASH_MAX	(safeptrhash){SIZE_MAX,SIZE_MAX}
 #define SAFEPTRHASH_ZERO (safeptrhash){0,0}
 #define SAFEPTR_GUARD_IF(type, safeptr, i) if(((i)*sizeof(type)) < safeptr.size)
+#define SAFEPTR_TRY_GET(target, type, safeptr, i) \
+	{type* p = safepointer_deref(safeptr); if(p) SAFEPTR_GUARD_IF(type, safeptr, i) {target = p[i];}}
+#define SAFEPTR_TRY_WRITE(type, safeptr, i, value) \
+	{type* p = safepointer_deref(safeptr); if(p) SAFEPTR_GUARD_IF(type, safeptr, i) {p[i] = value;}}
 typedef struct{	size_t indy; 	
 				size_t size; 		//Size of the buffer being pointed to.
 				safeptrhash hash;	//Unique identifier for this malloc.
