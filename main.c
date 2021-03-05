@@ -290,7 +290,7 @@ void handle_request(struct http_request_s* request) {
 		for(size_t i = 1; i < strlen(alloced_url);i++)
 				if(alloced_url[i] == '.' && alloced_url[i-1] == '.')
 					{deliver_404(request);goto handled;}
-		FILE* fp = fopen(alloced_url + 9, "r");
+		FILE* fp = fopen(alloced_url + 9, "rb");
 		if(!fp)	{deliver_404(request);goto handled;}
 		unsigned int len;
 		void* p = read_file_into_alloced_buffer(fp, &len);
