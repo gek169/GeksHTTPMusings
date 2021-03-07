@@ -24,7 +24,7 @@ static inline char* strcatalloc(const char* s1, const char* s2){
 	strcat(d, s2);
 	return d;
 }
-
+//Free the first argument.
 static inline char* strcatallocf1(char* s1, const char* s2){
 	char* d = STRUTIL_ALLOC(strlen(s1) + strlen(s2) + 1);
 	strcpy(d, s1);
@@ -32,7 +32,7 @@ static inline char* strcatallocf1(char* s1, const char* s2){
 	STRUTIL_FREE(s1);
 	return d;
 }
-
+//Free the second argument.
 static inline char* strcatallocf2(const char* s1, char* s2){
 	char* d = STRUTIL_ALLOC(strlen(s1) + strlen(s2) + 1);
 	strcpy(d, s1);
@@ -40,7 +40,7 @@ static inline char* strcatallocf2(const char* s1, char* s2){
 	STRUTIL_FREE(s2);
 	return d;
 }
-
+//Free both arguments
 static inline char* strcatallocfb(char* s1, char* s2){
 	char* d = STRUTIL_ALLOC(strlen(s1) + strlen(s2) + 1);
 	strcpy(d, s1);
@@ -65,16 +65,20 @@ static inline unsigned int strprefix(const char *pre, const char *str)
     return lenstr < lenpre ? 0 : memcmp(pre, str, lenpre) == 0;
 }
 
-//Someone once said sub-string search was an O(n^2) algorithm. How about nah.
+//Someone once said sub-string search was an O(n^2) algorithm. What the hell?
 static inline int strfind(const char* text, const char* subtext){
 	int ti = 0;
 	int si = 0;
 	int st = strlen(subtext);
-	int mt = strlen(text) - st+1;
-	if(mt < 0 || st < 1) return -1;
-	for(;ti<mt;ti++){
-		if(text[ti] == subtext[si]) si++; else {si = 0;}
-		if(subtext[si] == '\0') return (ti - st) + 1;
+	for(;text[ti] != '\0';ti++){
+		if(text[ti] == subtext[si]) {
+			si++; 
+			if(subtext[si] == '\0') return (ti - st)+1;
+		}else {
+			si = 0;
+			if(subtext[si] == '\0') return (ti - st);
+		}
+		
 	}
 	return -1;
 }
