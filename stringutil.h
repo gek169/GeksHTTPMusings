@@ -24,32 +24,40 @@
 #endif
 //Strcat but with malloc.
 static inline char* strcatalloc(const char* s1, const char* s2){
-	char* d = STRUTIL_ALLOC(strlen(s1) + strlen(s2) + 1);
-	strcpy(d, s1);
-	strcat(d, s2);
+	char* d = NULL; d = STRUTIL_ALLOC(strlen(s1) + strlen(s2) + 1);
+	if(d){
+		strcpy(d, s1);
+		strcat(d, s2);
+	}
 	return d;
 }
 //Free the first argument.
 static inline char* strcatallocf1(char* s1, const char* s2){
-	char* d = STRUTIL_ALLOC(strlen(s1) + strlen(s2) + 1);
-	strcpy(d, s1);
-	strcat(d, s2);
+	char* d = NULL; d = STRUTIL_ALLOC(strlen(s1) + strlen(s2) + 1);
+	if(d){
+		strcpy(d, s1);
+		strcat(d, s2);
+	}
 	STRUTIL_FREE(s1);
 	return d;
 }
 //Free the second argument.
 static inline char* strcatallocf2(const char* s1, char* s2){
-	char* d = STRUTIL_ALLOC(strlen(s1) + strlen(s2) + 1);
-	strcpy(d, s1);
-	strcat(d, s2);
+	char* d = NULL; d = STRUTIL_ALLOC(strlen(s1) + strlen(s2) + 1);
+	if(d){
+		strcpy(d, s1);
+		strcat(d, s2);
+	}
 	STRUTIL_FREE(s2);
 	return d;
 }
 //Free both arguments
 static inline char* strcatallocfb(char* s1, char* s2){
-	char* d = STRUTIL_ALLOC(strlen(s1) + strlen(s2) + 1);
-	strcpy(d, s1);
-	strcat(d, s2);
+	char* d = NULL; d = STRUTIL_ALLOC(strlen(s1) + strlen(s2) + 1);
+	if(d){
+		strcpy(d, s1);
+		strcat(d, s2);
+	}
 	STRUTIL_FREE(s1);
 	STRUTIL_FREE(s2);
 	return d;
@@ -57,9 +65,11 @@ static inline char* strcatallocfb(char* s1, char* s2){
 
 //Convert a non-null-terminated URL into a null terminated one.
 static inline char* str_null_terminated_alloc(const char* in, unsigned int len){
-	char* d = malloc(len+1);
-	memcpy(d,in,len);
-	d[len] = '\0';
+	char* d = NULL; d = malloc(len+1);
+	if(d){
+		memcpy(d,in,len);
+		d[len] = '\0';
+	}
 	return d;
 }
 
@@ -108,6 +118,7 @@ static inline unsigned int read_until_terminator(FILE* f, char* buf, const unsig
 static inline char* read_until_terminator_alloced(FILE* f, unsigned int* lenout, char terminator, unsigned int initsize){
 	char c;
 	char* buf = STRUTIL_ALLOC(initsize);
+	if(!buf) return NULL;
 	unsigned int bcap = initsize;
 	unsigned int blen = 0;
 	while(1){
@@ -117,7 +128,9 @@ static inline char* read_until_terminator_alloced(FILE* f, unsigned int* lenout,
 		if(blen == (bcap-1))	//Grow the buffer.
 			{
 				bcap<<=1;
+				char* bufold = buf;
 				buf = STRUTIL_REALLOC(buf, bcap);
+				if(!buf){free(bufold); return NULL;}
 			}
 		buf[blen++] = c;
 	}
