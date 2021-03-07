@@ -65,6 +65,20 @@ static inline unsigned int strprefix(const char *pre, const char *str)
     return lenstr < lenpre ? 0 : memcmp(pre, str, lenpre) == 0;
 }
 
+//Someone once said sub-string search was an O(n^2) algorithm. How about nah.
+static inline int strfind(const char* text, const char* subtext){
+	int ti = 0;
+	int si = 0;
+	int st = strlen(subtext);
+	int mt = strlen(text) - st+1;
+	if(mt < 0 || st < 1) return -1;
+	for(;ti<mt;ti++){
+		if(text[ti] == subtext[si]) si++; else {si = 0;}
+		if(subtext[si] == '\0') return (ti - st) + 1;
+	}
+	return -1;
+}
+
 //Read file until terminator character is found.
 //Returns the number of characters copied.
 static inline unsigned int read_until_terminator(FILE* f, char* buf, const unsigned int buflen, char terminator){
