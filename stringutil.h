@@ -7,8 +7,13 @@
 #ifndef STRUTIL_ALLOC
 #define STRUTIL_ALLOC(s) malloc(s)
 #endif
+
 #ifndef STRUTIL_FREE
 #define STRUTIL_FREE(s) free(s)
+#endif
+
+#ifndef STRUTIL_REALLOC
+#define STRUTIL_REALLOC(s, t) realloc(s,t)
 #endif
 
 #ifndef STRUTIL_NO_SHORT_NAMES
@@ -97,6 +102,28 @@ static inline unsigned int read_until_terminator(FILE* f, char* buf, const unsig
 	}
 	buf[buflen-1] = '\0'; //READ_UNTIL_TERMINATOR ALWAYS RETURNS A VALID STRING!
 	return i;
+}
+
+//Same as above but allocates memory to guarantee it can hold the entire thing. Grows naturally.
+static inline char* read_until_terminator_alloced(FILE* f, unsigned int* lenout, char terminator, unsigned int initsize){
+	char c;
+	char* buf = STRUTIL_ALLOC(initsize);
+	unsigned int bcap = initsize;
+	unsigned int blen = 0;
+	while(1){
+		if(feof(f)){break;}
+		c = fgetc(f);
+		if(c == terminator) {break;}
+		if(blen == (bcap-1))	//Grow the buffer.
+			{
+				bcap<<=1;
+				buf = STRUTIL_REALLOC(buf, bcap);
+			}
+		buf[blen++] = c;
+	}
+	buf[blen] = '\0'; //READ_UNTIL_TERMINATOR ALWAYS RETURNS A VALID STRING!
+	*lenout = blen;
+	return buf;
 }
 
 
