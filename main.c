@@ -79,7 +79,7 @@ void deliver_text(struct http_request_s* request, const char* fname){
 				{deliver_404(request);return;}
 	FILE* f = fopen(fname, "r");
 	if(!f) {deliver_404(request);return;}
-	unsigned int len;
+	unsigned long long len;
 	char* p = read_file_into_alloced_buffer(f, &len);
 	if(!p)	{fclose(f);deliver_404(request);return;}
 	{
@@ -119,7 +119,7 @@ void deliver_html(struct http_request_s* request, const char* fname){
 				{deliver_404(request);return;}
 	FILE* f = fopen(fname, "r");
 	if(!f) {deliver_404(request);return;}
-	unsigned int len;
+	unsigned long long len;
 	char* p = read_file_into_alloced_buffer(f, &len);
 	if(!p)	{fclose(f);deliver_404(request);return;}
 	{
@@ -294,7 +294,7 @@ void handle_request(struct http_request_s* request) {
 					{deliver_404(request);goto handled;}
 		FILE* fp = fopen(alloced_url + 9, "rb");
 		if(!fp)	{deliver_404(request);goto handled;}
-		unsigned int len;
+		unsigned long long len;
 		void* p = read_file_into_alloced_buffer(fp, &len);
 		deliver_data(request,p,len);
 		fclose(fp);
