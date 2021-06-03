@@ -7,7 +7,7 @@
 pthread_mutex_t safemem_mtx;	//(pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 #define SAFEPTR_RESOURCE_LOCK() {pthread_mutex_lock(&safemem_mtx);}
 #define SAFEPTR_RESOURCE_UNLOCK() {pthread_mutex_unlock(&safemem_mtx);}
-#define C_SAFEMEM_DEBUG
+//#define C_SAFEMEM_DEBUG
 #include "safemem.h"
 #include <string.h>
 #include <time.h>
